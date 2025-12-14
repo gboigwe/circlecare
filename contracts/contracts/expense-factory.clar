@@ -296,23 +296,20 @@
 
 ;; Withdraw collected fees (owner only)
 (define-public (withdraw-fees)
-  (begin
-    (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-OWNER-ONLY)
-
-    (let
-      (
-        (contract-balance (as-contract (stx-get-balance tx-sender)))
-      )
-      (asserts! (> contract-balance u0) ERR-WITHDRAWAL-FAILED)
-
-      (try! (as-contract (stx-transfer? contract-balance tx-sender CONTRACT-OWNER)))
-      (print {
-        event: "fees-withdrawn",
-        amount: contract-balance,
-        timestamp: stacks-block-time ;; Clarity 4
-      })
-      (ok contract-balance)
+  (let
+    (
+      (fees-amount (var-get total-fees-collected))
     )
+    (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-OWNER-ONLY)
+    (asserts! (> fees-amount u0) ERR-WITHDRAWAL-FAILED)
+
+    (var-set total-fees-collected u0)
+    (print {
+      event: "fees-withdrawn",
+      amount: fees-amount,
+      timestamp: stacks-block-time ;; Clarity 4
+    })
+    (ok fees-amount)
   )
 )
 
