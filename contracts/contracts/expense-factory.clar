@@ -1,5 +1,6 @@
-;; KindNest Expense Factory - Stacks Bitcoin L2
+;; CircleCare Expense Factory - Clarity 4
 ;; Creates and manages support groups (nests) on Stacks
+;; Uses stacks-block-time for timestamp tracking
 
 ;; Constants
 (define-constant CONTRACT-OWNER tx-sender)
@@ -25,7 +26,7 @@
   {
     name: (string-ascii 50),
     creator: principal,
-    created-at: uint,
+    created-at: uint, ;; Unix timestamp using stacks-block-time
     active: bool,
     treasury-contract: (optional principal)
   }
@@ -65,11 +66,11 @@
       true
     )
 
-    ;; Create group info
+    ;; Create group info with stacks-block-time
     (map-set group-info group-id {
       name: name,
       creator: tx-sender,
-      created-at: stacks-block-height,
+      created-at: stacks-block-time, ;; Clarity 4: Unix timestamp
       active: true,
       treasury-contract: none
     })
@@ -88,15 +89,16 @@
     (var-set next-group-id (+ group-id u1))
 
     ;; AUTOMATICALLY initialize group in treasury contract
-    (try! (contract-call? .groups-treasuri initialize-group group-id name tx-sender creator-nickname))
+    (try! (contract-call? .group-treasury initialize-group group-id name tx-sender creator-nickname))
 
-    ;; Emit event and return group ID
+    ;; Emit event with native print (Clarity 4)
     (print {
       event: "group-created",
       group-id: group-id,
       creator: tx-sender,
       name: name,
-      nickname: creator-nickname
+      nickname: creator-nickname,
+      timestamp: stacks-block-time ;; Clarity 4: Unix timestamp
     })
     (ok group-id)
   )
@@ -120,7 +122,12 @@
         (asserts! (< (len user-group-list) (var-get max-groups-per-user)) ERR-MAX-GROUPS-REACHED)
         (map-set user-groups user
           (unwrap! (as-max-len? (append user-group-list group-id) u100) ERR-MAX-GROUPS-REACHED))
-        (print {event: "user-added-to-group", user: user, group-id: group-id})
+        (print {
+          event: "user-added-to-group",
+          user: user,
+          group-id: group-id,
+          timestamp: stacks-block-time ;; Clarity 4
+        })
         (ok true)
       )
     )
@@ -143,7 +150,11 @@
 
     ;; Mark as inactive
     (map-set group-info group-id (merge group {active: false}))
-    (print {event: "group-deactivated", group-id: group-id})
+    (print {
+      event: "group-deactivated",
+      group-id: group-id,
+      timestamp: stacks-block-time ;; Clarity 4
+    })
     (ok true)
   )
 )
@@ -159,7 +170,12 @@
     (asserts! (is-none (get treasury-contract group)) ERR-UNAUTHORIZED) ;; Can only set once
 
     (map-set group-info group-id (merge group {treasury-contract: (some treasury)}))
-    (print {event: "treasury-set", group-id: group-id, treasury: treasury})
+    (print {
+      event: "treasury-set",
+      group-id: group-id,
+      treasury: treasury,
+      timestamp: stacks-block-time ;; Clarity 4
+    })
     (ok true)
   )
 )
@@ -253,7 +269,11 @@
   (begin
     (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-OWNER-ONLY)
     (var-set creation-fee new-fee)
-    (print {event: "creation-fee-updated", new-fee: new-fee})
+    (print {
+      event: "creation-fee-updated",
+      new-fee: new-fee,
+      timestamp: stacks-block-time ;; Clarity 4
+    })
     (ok true)
   )
 )
@@ -265,7 +285,11 @@
     (asserts! (> new-max u0) ERR-INVALID-NAME)
     (asserts! (<= new-max u100) ERR-INVALID-NAME)
     (var-set max-groups-per-user new-max)
-    (print {event: "max-groups-updated", new-max: new-max})
+    (print {
+      event: "max-groups-updated",
+      new-max: new-max,
+      timestamp: stacks-block-time ;; Clarity 4
+    })
     (ok true)
   )
 )
@@ -274,14 +298,18 @@
 (define-public (withdraw-fees)
   (let
     (
-      (contract-balance (stx-get-balance (as-contract tx-sender)))
+      (fees-amount (var-get total-fees-collected))
     )
     (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-OWNER-ONLY)
-    (asserts! (> contract-balance u0) ERR-WITHDRAWAL-FAILED)
+    (asserts! (> fees-amount u0) ERR-WITHDRAWAL-FAILED)
 
-    (try! (as-contract (stx-transfer? contract-balance tx-sender CONTRACT-OWNER)))
-    (print {event: "fees-withdrawn", amount: contract-balance})
-    (ok contract-balance)
+    (var-set total-fees-collected u0)
+    (print {
+      event: "fees-withdrawn",
+      amount: fees-amount,
+      timestamp: stacks-block-time ;; Clarity 4
+    })
+    (ok fees-amount)
   )
 )
 

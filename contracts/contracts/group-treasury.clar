@@ -1,4 +1,5 @@
-;; KindNest Group Treasury - Expense Management
+;; CircleCare Group Treasury - Clarity 4
+;; Expense Management with stacks-block-time timestamps
 ;; Handles expenses, settlements, and member balances for all groups
 
 ;; Error codes
@@ -35,7 +36,7 @@
   {
     name: (string-ascii 50),
     creator: principal,
-    created-at: uint,
+    created-at: uint, ;; Unix timestamp using stacks-block-time
     paused: bool,
     next-expense-id: uint,
     next-settlement-id: uint,
@@ -51,7 +52,7 @@
     total-owed: uint,
     total-owing: uint,
     active: bool,
-    joined-at: uint
+    joined-at: uint ;; Unix timestamp using stacks-block-time
   }
 )
 
@@ -63,7 +64,7 @@
     total-amount: uint,
     paid-by: principal,
     settled: bool,
-    timestamp: uint,
+    timestamp: uint, ;; Unix timestamp using stacks-block-time
     participant-count: uint
   }
 )
@@ -87,7 +88,7 @@
     debtor: principal,
     creditor: principal,
     amount: uint,
-    timestamp: uint
+    timestamp: uint ;; Unix timestamp using stacks-block-time
   }
 )
 
@@ -105,30 +106,36 @@
     ;; Check that group doesn't already exist
     (asserts! (is-none (map-get? groups group-id)) ERR-GROUP-NOT-FOUND)
 
-    ;; Create group
+    ;; Create group with stacks-block-time
     (map-set groups group-id {
       name: name,
       creator: creator,
-      created-at: stacks-block-height,
+      created-at: stacks-block-time, ;; Clarity 4: Unix timestamp
       paused: false,
       next-expense-id: u1,
       next-settlement-id: u1,
       member-count: u1
     })
 
-    ;; Add creator as first member
+    ;; Add creator as first member with stacks-block-time
     (map-set members {group-id: group-id, member: creator} {
       nickname: creator-nickname,
       total-owed: u0,
       total-owing: u0,
       active: true,
-      joined-at: stacks-block-height
+      joined-at: stacks-block-time ;; Clarity 4: Unix timestamp
     })
 
     ;; Add to member list
     (map-set group-member-list {group-id: group-id, index: u0} creator)
 
-    (print {event: "group-initialized", group-id: group-id, name: name, creator: creator})
+    (print {
+      event: "group-initialized",
+      group-id: group-id,
+      name: name,
+      creator: creator,
+      timestamp: stacks-block-time ;; Clarity 4
+    })
     (ok true)
   )
 )
@@ -150,13 +157,13 @@
     ;; Check member doesn't exist
     (asserts! (is-none (map-get? members member-key)) ERR-MEMBER-EXISTS)
 
-    ;; Add member
+    ;; Add member with stacks-block-time
     (map-set members member-key {
       nickname: nickname,
       total-owed: u0,
       total-owing: u0,
       active: true,
-      joined-at: stacks-block-height
+      joined-at: stacks-block-time ;; Clarity 4: Unix timestamp
     })
 
     ;; Add to member list
@@ -169,7 +176,13 @@
       member-count: (+ (get member-count group) u1)
     }))
 
-    (print {event: "member-added", group-id: group-id, member: member, nickname: nickname})
+    (print {
+      event: "member-added",
+      group-id: group-id,
+      member: member,
+      nickname: nickname,
+      timestamp: stacks-block-time ;; Clarity 4
+    })
     (ok true)
   )
 )
@@ -203,13 +216,13 @@
     ;; Validate all participants are active members and check for duplicates
     (try! (validate-participants group-id participants))
 
-    ;; Store expense
+    ;; Store expense with stacks-block-time
     (map-set expenses {group-id: group-id, expense-id: expense-id} {
       description: description,
       total-amount: amount,
       paid-by: tx-sender,
       settled: false,
-      timestamp: stacks-block-height,
+      timestamp: stacks-block-time, ;; Clarity 4: Unix timestamp
       participant-count: participant-count
     })
 
@@ -227,7 +240,8 @@
       expense-id: expense-id,
       paid-by: tx-sender,
       amount: amount,
-      description: description
+      description: description,
+      timestamp: stacks-block-time ;; Clarity 4
     })
     (ok expense-id)
   )
@@ -267,12 +281,12 @@
       total-owing: (- (get total-owing creditor-info) debt)
     }))
 
-    ;; Record settlement
+    ;; Record settlement with stacks-block-time
     (map-set settlements {group-id: group-id, settlement-id: settlement-id} {
       debtor: tx-sender,
       creditor: creditor,
       amount: debt,
-      timestamp: stacks-block-height
+      timestamp: stacks-block-time ;; Clarity 4: Unix timestamp
     })
 
     ;; Update next settlement ID
@@ -280,7 +294,14 @@
       next-settlement-id: (+ settlement-id u1)
     }))
 
-    (print {event: "debt-settled-stx", group-id: group-id, debtor: tx-sender, creditor: creditor, amount: debt})
+    (print {
+      event: "debt-settled-stx",
+      group-id: group-id,
+      debtor: tx-sender,
+      creditor: creditor,
+      amount: debt,
+      timestamp: stacks-block-time ;; Clarity 4
+    })
     (ok settlement-id)
   )
 )
@@ -293,7 +314,11 @@
     )
     (asserts! (is-eq tx-sender (get creator group)) ERR-UNAUTHORIZED)
     (map-set groups group-id (merge group {paused: true}))
-    (print {event: "group-paused", group-id: group-id})
+    (print {
+      event: "group-paused",
+      group-id: group-id,
+      timestamp: stacks-block-time ;; Clarity 4
+    })
     (ok true)
   )
 )
@@ -306,7 +331,11 @@
     )
     (asserts! (is-eq tx-sender (get creator group)) ERR-UNAUTHORIZED)
     (map-set groups group-id (merge group {paused: false}))
-    (print {event: "group-unpaused", group-id: group-id})
+    (print {
+      event: "group-unpaused",
+      group-id: group-id,
+      timestamp: stacks-block-time ;; Clarity 4
+    })
     (ok true)
   )
 )
@@ -324,7 +353,12 @@
     (asserts! (<= (len new-description) MAX-DESCRIPTION-LENGTH) ERR-INVALID-DESCRIPTION)
 
     (map-set expenses expense-key (merge expense {description: new-description}))
-    (print {event: "expense-updated", group-id: group-id, expense-id: expense-id})
+    (print {
+      event: "expense-updated",
+      group-id: group-id,
+      expense-id: expense-id,
+      timestamp: stacks-block-time ;; Clarity 4
+    })
     (ok true)
   )
 )
@@ -345,7 +379,12 @@
     ;; Deactivate member
     (map-set members member-key (merge member-info {active: false}))
 
-    (print {event: "member-removed", group-id: group-id, member: member})
+    (print {
+      event: "member-removed",
+      group-id: group-id,
+      member: member,
+      timestamp: stacks-block-time ;; Clarity 4
+    })
     (ok true)
   )
 )

@@ -23,9 +23,10 @@ import { useStacks } from './StacksProvider';
 import { stacksNetwork } from './stacks';
 
 // Use environment variables for contract configuration
-const DEPLOYER = process.env.NEXT_PUBLIC_DEPLOYER_ADDRESS || 'STDCC1840NWS58QP44QMKC2BRX06VTRCZ7TGK95P';
-const FACTORY_CONTRACT = process.env.NEXT_PUBLIC_FACTORY_CONTRACT || 'expensess-factori';
-const TREASURY_CONTRACT = process.env.NEXT_PUBLIC_TREASURY_CONTRACT || 'groups-treasuri';
+// Clarity 4 deployment with stacks-block-time
+const DEPLOYER = process.env.NEXT_PUBLIC_DEPLOYER_ADDRESS || 'SPD5ETF2HZ921C8RJG2MHPAN7SSP9AYEYD5GSP84';
+const FACTORY_CONTRACT = process.env.NEXT_PUBLIC_FACTORY_CONTRACT || 'expense-factory';
+const TREASURY_CONTRACT = process.env.NEXT_PUBLIC_TREASURY_CONTRACT || 'group-treasury';
 
 // Validate environment variables in production
 if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PUBLIC_DEPLOYER_ADDRESS) {

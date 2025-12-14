@@ -55,10 +55,11 @@ CircleCare embodies four core pillars:
 
 ## 🏗️ Architecture
 
-### Smart Contracts (Clarity)
-- **expensess-factori**: Creates and manages circles of care
-- **groups-treasuri**: Handles care tracking, sharing, and circle completion
-- Built with Clarity on Stacks for Bitcoin-backed security
+### Smart Contracts (Clarity 4)
+- **expense-factory**: Creates and manages circles of care
+- **group-treasury**: Handles care tracking, sharing, and circle completion
+- Built with Clarity 4 on Stacks for Bitcoin-backed security
+- Uses stacks-block-time for Unix timestamp tracking
 
 ### Frontend
 - **Next.js 15** with React 19 for modern experiences
