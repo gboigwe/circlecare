@@ -1,21 +1,23 @@
 [project]
 name = 'contracts'
-description = ''
+description = 'CircleCare - Expense Management on Stacks with Clarity 4'
 authors = []
 telemetry = true
 cache_dir = './.cache'
 requirements = []
-[contracts.expensess-factori]
+[contracts.expense-factory]
 path = 'contracts/expense-factory.clar'
-clarity_version = 3
-epoch = '3.1'
+clarity_version = 4
+epoch = 'latest'
 
-[contracts.groups-treasuri]
+[contracts.group-treasury]
 path = 'contracts/group-treasury.clar'
-clarity_version = 3
+clarity_version = 4
 epoch = 'latest'
 [repl.analysis]
 passes = ['check_checker']
+
+[repl.analysis.lints]
 
 [repl.analysis.check_checker]
 strict = false
