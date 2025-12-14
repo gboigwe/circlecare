@@ -22,10 +22,10 @@ import {
 import { stacksNetwork } from './stacks';
 
 // Contract addresses (deployed on Stacks testnet)
-// Updated to match deployment: expensess-factori and groups-treasuri
+// Clarity 4 deployment with stacks-block-time
 export const CONTRACTS = {
-  EXPENSE_FACTORY: 'STDCC1840NWS58QP44QMKC2BRX06VTRCZ7TGK95P.expensess-factori',
-  GROUP_TREASURY: 'STDCC1840NWS58QP44QMKC2BRX06VTRCZ7TGK95P.groups-treasuri'
+  EXPENSE_FACTORY: 'SPD5ETF2HZ921C8RJG2MHPAN7SSP9AYEYD5GSP84.expense-factory',
+  GROUP_TREASURY: 'SPD5ETF2HZ921C8RJG2MHPAN7SSP9AYEYD5GSP84.group-treasury'
 } as const;
 
 export const NETWORK_INFO = {
